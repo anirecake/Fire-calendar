@@ -264,3 +264,58 @@ def test_risk_cells_country(client):
     r = client.get("/api/risk/cells", params={"country": "Uzbekistan"}).json()
     assert r["cells"] and all(c["region"].startswith("UZB") for c in r["cells"])
     assert client.get("/api/risk/cells").status_code == 400
+
+
+# ---------------------------------------------------------------- after-fire reports
+class FakeFire:
+    def __init__(self):
+        self.calls = []
+
+    def create(self, **kw):
+        self.calls.append(kw)
+        out = {"headline": "Steppe fire burned 93 km2", "summary": "S.", "key_numbers": [{"label": "Area", "value": "93 km2"}],
+               "why": "Hot and dry.", "impact": "Grassland.", "radar": "", "caveats": ["Footprint, not mapped burned area."],
+               "for_emergency": {"assessment": "A.", "lessons": ["L."], "actions": [{"who": "fire units", "what": "W.", "when": "May"}]}}
+        return NS(stop_reason="end_turn", model="fake", content=[NS(type="text", text=json.dumps(out))])
+
+
+def test_fire_reports(client):
+    from app import fires
+    if not fires.INDEX["fires"]:
+        pytest.skip("fire reports not built")
+    ix = client.get("/api/fires").json()
+    assert ix["total"] == len(fires.INDEX["fires"]) and ix["fires"]
+    f0 = ix["fires"][0]
+    assert client.get("/api/fires", params={"region": f0["region"]}).json()["fires"][0]["region"] == f0["region"]
+    rep = client.get(f"/api/fires/{f0['id']}").json()
+    for k in ("growth", "points", "land_cover", "around", "weather", "history", "footprint_km2"):
+        assert k in rep
+    assert abs(rep["growth"][-1]["total_km2"] - rep["footprint_km2"]) < 0.01                       # day-by-day adds up
+    assert client.get("/api/fires/1").status_code == 404
+    assert client.get(f"/api/fires/{f0['id']}/files/../../app/main.py").status_code == 404           # whitelist only
+    with_radar = [f for f in fires.INDEX["fires"] if f["radar"]]
+    if with_radar:
+        r = client.get(f"/api/fires/{with_radar[0]['id']}/files/delta.png")
+        assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+
+
+def test_ai_fire_report_grounded(client, monkeypatch):
+    from app import assistant, briefing, fires
+    if not fires.INDEX["fires"]:
+        pytest.skip("fire reports not built")
+    fake = FakeFire()
+    monkeypatch.setattr(assistant, "API_KEY", "test")
+    monkeypatch.setattr(assistant, "_client", NS(beta=NS(messages=fake)))
+    monkeypatch.setattr(briefing, "_blob_get", lambda key: None)
+    monkeypatch.setattr(briefing, "_blob_put", lambda key, data: None)
+    fires._cache.clear(); fires._hits.clear()
+    fid = fires.INDEX["fires"][0]["id"]
+    a = client.get("/api/ai/fire-report", params={"id": fid, "lang": "kk"}).json()
+    assert a["headline"].startswith("Steppe") and a["for_emergency"]["actions"][0]["who"] == "fire units"
+    kw = fake.calls[0]
+    assert kw["output_config"]["format"]["type"] == "json_schema"
+    facts = kw["messages"][0]["content"]
+    assert "Language: Kazakh" in facts and "footprint_km2" in facts and '"points"' not in facts      # no raw points sent
+    client.get("/api/ai/fire-report", params={"id": fid, "lang": "kk"})
+    assert len(fake.calls) == 1                                                                      # cached
+    assert client.get("/api/ai/fire-report", params={"id": 1, "lang": "kk"}).status_code == 404

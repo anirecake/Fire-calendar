@@ -13,9 +13,9 @@
   const TYPE_COLOR = { large: "#ff3b1f", recurrent: "#ffb000", small: "#8c857b" };
   const LVL = ["low", "elevated", "high", "very_high"];
   const TABS = {
-    overview: ["now", "season", "trend", "data"],
-    emergency: ["now", "why", "act", "regions"],
-    analyst: ["regions", "fires", "props", "data"],
+    overview: ["now", "season", "trend", "after", "data"],
+    emergency: ["now", "why", "act", "after", "regions"],
+    analyst: ["regions", "fires", "after", "props", "data"],
   };
   const SMALL = 5;   // typical count below which percentages are noise
   const $ = (id) => document.getElementById(id);
@@ -684,6 +684,7 @@
     if (S.view === "analyst") renderAnalyst();
     $("dl-events").hidden = S.view !== "analyst";
     setTimeout(resizeCharts, 0);
+    document.dispatchEvent(new CustomEvent("fc:render"));
   }
 
   /* ---------- answer (overview + emergency) ---------- */
@@ -1006,7 +1007,7 @@
         .bindPopup(eventPopup(e)).addTo(eventsLayer);
     }
   }
-  const eventPopup = (e) => `<b>${esc(t(`type_${e.type}`))}</b><br>${esc(regionName(e.region))}<br><span class="num">${esc(t("ev_popup", { r: dRange(e), a: fmt(e.area_km2, 1), d: e.duration_days, f: fmt(e.frp_max_mw) }))}</span>`;
+  const eventPopup = (e) => `<b>${esc(t(`type_${e.type}`))}</b><br>${esc(regionName(e.region))}<br><span class="num">${esc(t("ev_popup", { r: dRange(e), a: fmt(e.area_km2, 1), d: e.duration_days, f: fmt(e.frp_max_mw) }))}</span>${window.FC && FC.fireLink ? FC.fireLink(e.id) : ""}`;
   function flyToEvent(e) {
     map.flyTo([e.lat, e.lon], Math.max(map.getZoom(), 9), { duration: 0.6 });
     eventsLayer.eachLayer((l) => { const p = l.getLatLng(); if (Math.abs(p.lat - e.lat) < 1e-6 && Math.abs(p.lng - e.lon) < 1e-6) l.openPopup(); });
@@ -1317,7 +1318,7 @@
 
   /* small bridge for the assistant widget (web/assistant.js) */
   window.FC = {
-    S, t, fmt, esc, hs, plural, regionName, countryName, dateFmt, api, getJSON, selectRegion, selectCountry,
+    S, t, fmt, esc, hs, plural, regionName, countryName, dateFmt, dRange, map, api, getJSON, selectRegion, selectCountry,
     setView: (v) => { if (v !== S.view) setView(v); },
     showPoint(lat, lon, r = 25) {
       $("more").open = true; stopDraw(); setPointMode(true);

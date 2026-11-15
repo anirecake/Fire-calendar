@@ -759,6 +759,9 @@ app.include_router(push_router)
 from app.briefing import router as briefing_router  # noqa: E402
 
 app.include_router(briefing_router)
+from app.fires import router as fires_router  # noqa: E402
+
+app.include_router(fires_router)
 
 
 @app.get("/sw.js", include_in_schema=False)

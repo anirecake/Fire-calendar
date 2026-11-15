@@ -110,6 +110,36 @@ detected after subscribing are sent, each once; expired subscriptions are delete
 
 Also: type latitude/longitude for point search, and every chart has a ↓ PNG button.
 
+### After the fire: reports for journalists and emergency services (with SARWatch / NISAR)
+
+Tab **After fire** (every view). `scripts/build_fire_reports.py` builds a fact sheet for the largest fires
+(the biggest since 2025 plus the biggest on record), served by `app/fires.py` and shown by `web/fires.js`:
+
+- **Footprint and growth**: the fire's own VIIRS 375 m detections (same linking rule as the events), day by day.
+- **Burned area, one unit from three satellites**: VIIRS active-fire footprint; **NASA MODIS MCD64A1** burned-area
+  map (500 m, read from Microsoft Planetary Computer) next to the fire; **NASA NISAR** L-band radar before/after
+  comparison computed with our partner team's **SARWatch** service. Over all fires a calibration gives
+  "km² burned per km² of VIIRS footprint", so every fire, also the ones before MCD64A1 months are published, can
+  be stated in burned km² with a likely range.
+- **What burned**: ESA WorldCover 2021 (10 m) land types inside the fire area.
+- **Who and what is nearby**: settlements within 15 km with distance and population, main roads, power lines,
+  railways crossing the fire area (OpenStreetMap, Overpass API).
+- **Weather during the fire** vs the same days in earlier years (NASA POWER), and the fire's **size rank** in its
+  province since 2012.
+- **Radar check (NISAR)**: median radar change inside the fire area vs pixels with no fire detection between the
+  two passes, share of pixels with a clear drop, an experimental burned-area estimate, the radar images on the
+  map and SARWatch's PDF report. Honest result so far: with passes 6–8 weeks apart the radar does not separate
+  the burned area on Kazakh grassland and only weakly in US forests; the report says so.
+- **AI write-up** (`GET /api/ai/fire-report?id=&lang=`): Claude turns the fact sheet into a news-style summary for
+  journalists and an after-action note (assessment, lessons, who/what/when actions) for emergency services, in
+  Kazakh, Russian or English, using only the numbers and names in the fact sheet (structured JSON output, cached).
+- **Print / PDF** button: the report becomes a printable page.
+
+```bash
+python scripts/build_fire_reports.py --nisar <SARWatch results>   # then:
+python scripts/build_fire_reports.py --modis-only                 # MODIS burned area + calibration
+```
+
 ## API
 
 Interactive docs: `/docs`. Every POST takes the same area body (all optional):
@@ -134,6 +164,9 @@ Interactive docs: `/docs`. Every POST takes the same area body (all optional):
 | `GET /api/links` | optional Telegram bot username |
 | `GET /api/push/config` · `POST /api/push/subscribe` · `/unsubscribe` · `/test` | browser push alerts |
 | `GET /api/grid?region=…` / `country=` / `bbox=w,s,e,n` | map cells for the selected area only |
+| `GET /api/fires?region=&country=&bbox=` | large fires with an after-fire report |
+| `GET /api/fires/{id}` · `/api/fires/{id}/files/{name}` | fact sheet (growth, burned area, land cover, settlements, weather, NISAR radar) and radar images / PDF |
+| `GET /api/ai/fire-report?id=&lang=` | AI after-fire report for journalists and emergency services |
 | `GET /api/health` | liveness + cache stats |
 
 Uncertainty: rescaled-MODIS months carry a 90 % interval from a two-part error model
@@ -192,7 +225,9 @@ too deep — create the venv at a short path (e.g. `%USERPROFILE%\.venvs\firecal
 ## Data
 
 NASA FIRMS — MODIS Collection 6.1 and VIIRS S-NPP 375 m active fire archives,
-https://firms.modaps.eosdis.nasa.gov/
+https://firms.modaps.eosdis.nasa.gov/ · NASA POWER daily weather · NASA MODIS MCD64A1 v6.1 burned area (via
+Microsoft Planetary Computer) · NASA NISAR L-band GCOV (via SARWatch, ASF) · ESA WorldCover 2021 ·
+OpenStreetMap (ODbL) · Natural Earth borders.
 
 ## Use of AI (Space Apps "Use of Super Intelligence" disclosure)
 

@@ -32,6 +32,9 @@ def main() -> None:
     for f in (ROOT / "data" / "processed_us").iterdir():
         if f.name in SKIP_DATA:
             continue
+        if f.is_dir():                                 # e.g. fires/ (after-fire reports + radar images)
+            shutil.copytree(f, proc / f.name)
+            continue
         if f.name == "points.parquet":                 # ~9 M hotspots: compact types + strong zstd to fit the function size
             import duckdb
             src, dst = f.as_posix(), (proc / f.name).as_posix()
