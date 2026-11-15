@@ -1,0 +1,6 @@
+# local: data pipeline + dev server
+-r requirements.txt
+uvicorn>=0.30
+pyarrow>=17
+truststore>=0.9
+pillow>=10      # only to redraw web/icon-*.png

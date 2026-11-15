@@ -1,0 +1,20 @@
+# secrets (keys live in .env / .env.local and in Vercel settings, never in git)
+.env*
+!.env.example
+
+# local tooling
+.venv/
+__pycache__/
+.pytest_cache/
+.vercel
+.claude
+*.log
+*.part
+
+# Telegram bot subscribers (chat ids + locations) stay private
+bot/*.db
+
+# raw NASA downloads and the US build (rebuild with scripts/, see README)
+data/raw/
+data/raw_us/
+data/processed_us/

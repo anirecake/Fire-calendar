@@ -1,0 +1,54 @@
+{
+  "events": 395527,
+  "by_type": {
+    "small": 240126,
+    "recurrent": 150983,
+    "large": 4418
+  },
+  "rules": {
+    "link_cell_deg": 0.01,
+    "gap_days": 2,
+    "pixel_km2": 0.14,
+    "large": "area >= 10.0 km2 or (duration >= 3 d and extent >= 5.0 km)",
+    "recurrent": "area < 2.0 km2, duration <= 2 d, fire in >= 50% of previous years nearby",
+    "intense": "peak FRP >= 100.0 MW"
+  },
+  "area_km2_quantiles": {
+    "0.5": 0.14,
+    "0.9": 0.84,
+    "0.99": 5.6,
+    "0.999": 29.26
+  },
+  "largest": [
+    {
+      "start": "2019-07-25",
+      "region": "KAZ-3203",
+      "area_km2": "488.18",
+      "duration_days": "21"
+    },
+    {
+      "start": "2017-08-17",
+      "region": "KAZ-3203",
+      "area_km2": "361.34",
+      "duration_days": "8"
+    },
+    {
+      "start": "2023-06-08",
+      "region": "KAZ-3206",
+      "area_km2": "324.24",
+      "duration_days": "8"
+    },
+    {
+      "start": "2017-08-13",
+      "region": "KAZ-3195",
+      "area_km2": "296.66",
+      "duration_days": "7"
+    },
+    {
+      "start": "2017-07-06",
+      "region": "KAZ-3203",
+      "area_km2": "233.52",
+      "duration_days": "5"
+    }
+  ]
+}

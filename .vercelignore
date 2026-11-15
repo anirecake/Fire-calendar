@@ -1,0 +1,17 @@
+.env
+.venv
+data/raw
+*.log
+*.part
+__pycache__
+.claude
+tests
+data/processed/weather.parquet
+.pytest_cache
+bot
+scripts
+.env.local
+data/raw_us
+data/processed_us
+data/web_us
+*.md

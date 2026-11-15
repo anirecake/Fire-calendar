@@ -1,0 +1,2069 @@
+{
+  "issue_date": "2026-11-13",
+  "horizon_days": 14,
+  "definition": "next 14 days above the region's 80th percentile for this time of year (and >= 10 hotspots)",
+  "validation": {
+    "train_years": [
+      2001,
+      2018
+    ],
+    "test_years": [
+      2019,
+      2025
+    ],
+    "issues_test": 17808,
+    "event_rate_test": 0.124,
+    "auc": 0.814,
+    "brier_skill_vs_climatology": 0.175,
+    "auc_climatology": 0.628,
+    "n_features": 18,
+    "n_train": 44736,
+    "ablation": {
+      "season_only": {
+        "auc": 0.62,
+        "brier_skill": 0.031
+      },
+      "season_weather": {
+        "auc": 0.658,
+        "brier_skill": 0.009
+      },
+      "season_fires": {
+        "auc": 0.809,
+        "brier_skill": 0.154
+      },
+      "v1": {
+        "auc": 0.811,
+        "brier_skill": 0.161
+      },
+      "all": {
+        "auc": 0.814,
+        "brier_skill": 0.175
+      }
+    },
+    "hit_rate_when_high": 0.531,
+    "share_of_events_caught_when_elevated": 0.545,
+    "false_alarm_share_when_elevated": 0.638,
+    "importance_auc_drop": {
+      "fires": 0.1567,
+      "season": 0.1462,
+      "dry": 0.0088,
+      "heat": 0.0074,
+      "neighbors": 0.0032,
+      "fuel": 0.003,
+      "lastyear": 0.0022,
+      "wind": 0.0016
+    }
+  },
+  "model": "AI: gradient boosting (sklearn HistGradientBoosting), 18 inputs; drivers = risk drop if a group of conditions were normal",
+  "features": [
+    "tmax30",
+    "rh30",
+    "pr30",
+    "gw14",
+    "ws14",
+    "tmax7",
+    "pr7",
+    "vpd30",
+    "gwroot30",
+    "wsmax14",
+    "sun30",
+    "pr90",
+    "pr180",
+    "fires14",
+    "trend7",
+    "nbr14",
+    "lastyear",
+    "season"
+  ],
+  "regions": {
+    "KAZ-3195": {
+      "prob": 0.112,
+      "usual_prob": 0.2,
+      "times_usual": 0.6,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.071
+        },
+        {
+          "key": "fuel",
+          "push": 0.059
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2009-10-29",
+          "fires_next14": 33,
+          "typical": 32
+        },
+        {
+          "date": "2020-11-11",
+          "fires_next14": 18,
+          "typical": 24
+        },
+        {
+          "date": "2003-10-22",
+          "fires_next14": 19,
+          "typical": 47
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 6.2,
+        "rain30_pct_of_normal": 44,
+        "rain180_pct_of_normal": 129,
+        "rh30_anom": -21.5,
+        "vpd30_anom": 0.51,
+        "soil_wetness_anom": -0.064,
+        "rootzone_wetness_anom": 0.011,
+        "wind14_anom": -0.7,
+        "fires_last14": 207,
+        "neighbors_fires14": 634,
+        "typical_next14": 24
+      }
+    },
+    "KAZ-3196": {
+      "prob": 0.156,
+      "usual_prob": 0.16,
+      "times_usual": 1.0,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.109
+        },
+        {
+          "key": "fuel",
+          "push": 0.076
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2005-10-22",
+          "fires_next14": 141,
+          "typical": 78
+        },
+        {
+          "date": "2024-10-28",
+          "fires_next14": 3,
+          "typical": 38
+        },
+        {
+          "date": "2007-11-05",
+          "fires_next14": 25,
+          "typical": 25
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 5.8,
+        "rain30_pct_of_normal": 31,
+        "rain180_pct_of_normal": 160,
+        "rh30_anom": -14.4,
+        "vpd30_anom": 0.38,
+        "soil_wetness_anom": -0.038,
+        "rootzone_wetness_anom": 0.051,
+        "wind14_anom": -1.3,
+        "fires_last14": 434,
+        "neighbors_fires14": 648,
+        "typical_next14": 25
+      }
+    },
+    "KAZ-3197": {
+      "prob": 0.042,
+      "usual_prob": 0.16,
+      "times_usual": 0.3,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2005-11-12",
+          "fires_next14": 10,
+          "typical": 25
+        },
+        {
+          "date": "2005-11-26",
+          "fires_next14": 6,
+          "typical": 9
+        },
+        {
+          "date": "2013-10-29",
+          "fires_next14": 258,
+          "typical": 136
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.9,
+        "rain30_pct_of_normal": 58,
+        "rain180_pct_of_normal": 87,
+        "rh30_anom": -19.4,
+        "vpd30_anom": 0.42,
+        "soil_wetness_anom": -0.109,
+        "rootzone_wetness_anom": -0.068,
+        "wind14_anom": -0.5,
+        "fires_last14": 71,
+        "neighbors_fires14": 325,
+        "typical_next14": 25
+      }
+    },
+    "KAZ-3198": {
+      "prob": 0.103,
+      "usual_prob": 0.24,
+      "times_usual": 0.4,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "dry",
+          "push": 0.038
+        },
+        {
+          "key": "neighbors",
+          "push": 0.026
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2024-10-14",
+          "fires_next14": 9,
+          "typical": 43
+        },
+        {
+          "date": "2025-10-22",
+          "fires_next14": 29,
+          "typical": 33
+        },
+        {
+          "date": "2012-10-21",
+          "fires_next14": 18,
+          "typical": 33
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.7,
+        "rain30_pct_of_normal": 44,
+        "rain180_pct_of_normal": 125,
+        "rh30_anom": -18.9,
+        "vpd30_anom": 0.37,
+        "soil_wetness_anom": -0.137,
+        "rootzone_wetness_anom": -0.115,
+        "wind14_anom": -0.3,
+        "fires_last14": 4,
+        "neighbors_fires14": 267,
+        "typical_next14": 9
+      }
+    },
+    "KAZ-3201": {
+      "prob": 0.122,
+      "usual_prob": 0.16,
+      "times_usual": 0.8,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.081
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2005-10-15",
+          "fires_next14": 603,
+          "typical": 53
+        },
+        {
+          "date": "2012-10-28",
+          "fires_next14": 51,
+          "typical": 23
+        },
+        {
+          "date": "2009-11-12",
+          "fires_next14": 200,
+          "typical": 11
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 6.5,
+        "rain30_pct_of_normal": 48,
+        "rain180_pct_of_normal": 97,
+        "rh30_anom": -29.7,
+        "vpd30_anom": 0.69,
+        "soil_wetness_anom": -0.158,
+        "rootzone_wetness_anom": -0.097,
+        "wind14_anom": -0.8,
+        "fires_last14": 58,
+        "neighbors_fires14": 211,
+        "typical_next14": 11
+      }
+    },
+    "KAZ-3202": {
+      "prob": 0.093,
+      "usual_prob": 0.04,
+      "times_usual": 2.3,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.056
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2003-10-22",
+          "fires_next14": 55,
+          "typical": 58
+        },
+        {
+          "date": "2010-11-05",
+          "fires_next14": 17,
+          "typical": 12
+        },
+        {
+          "date": "2002-11-05",
+          "fires_next14": 11,
+          "typical": 12
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.9,
+        "rain30_pct_of_normal": 83,
+        "rain180_pct_of_normal": 103,
+        "rh30_anom": -13.1,
+        "vpd30_anom": 0.25,
+        "soil_wetness_anom": -0.235,
+        "rootzone_wetness_anom": -0.186,
+        "wind14_anom": -1.3,
+        "fires_last14": 93,
+        "neighbors_fires14": 791,
+        "typical_next14": 9
+      }
+    },
+    "KAZ-3203": {
+      "prob": 0.149,
+      "usual_prob": 0.24,
+      "times_usual": 0.6,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.046
+        },
+        {
+          "key": "wind",
+          "push": 0.042
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2013-11-19",
+          "fires_next14": 2,
+          "typical": 12
+        },
+        {
+          "date": "2022-10-22",
+          "fires_next14": 9,
+          "typical": 78
+        },
+        {
+          "date": "2013-11-05",
+          "fires_next14": 174,
+          "typical": 20
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.2,
+        "rain30_pct_of_normal": 39,
+        "rain180_pct_of_normal": 56,
+        "rh30_anom": -16.8,
+        "vpd30_anom": 0.27,
+        "soil_wetness_anom": -0.176,
+        "rootzone_wetness_anom": -0.126,
+        "wind14_anom": -0.9,
+        "fires_last14": 54,
+        "neighbors_fires14": 1172,
+        "typical_next14": 18
+      }
+    },
+    "KAZ-3204": {
+      "prob": 0.144,
+      "usual_prob": 0.2,
+      "times_usual": 0.7,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.079
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2003-10-22",
+          "fires_next14": 53,
+          "typical": 50
+        },
+        {
+          "date": "2022-10-15",
+          "fires_next14": 35,
+          "typical": 138
+        },
+        {
+          "date": "2012-11-04",
+          "fires_next14": 4,
+          "typical": 13
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 5.5,
+        "rain30_pct_of_normal": 45,
+        "rain180_pct_of_normal": 98,
+        "rh30_anom": -12.6,
+        "vpd30_anom": 0.24,
+        "soil_wetness_anom": -0.116,
+        "rootzone_wetness_anom": -0.081,
+        "wind14_anom": -0.6,
+        "fires_last14": 293,
+        "neighbors_fires14": 537,
+        "typical_next14": 12
+      }
+    },
+    "KAZ-3205": {
+      "prob": 0.135,
+      "usual_prob": 0.24,
+      "times_usual": 0.6,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "heat",
+          "push": 0.029
+        },
+        {
+          "key": "lastyear",
+          "push": 0.028
+        },
+        {
+          "key": "neighbors",
+          "push": 0.027
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2024-11-25",
+          "fires_next14": 4,
+          "typical": 6
+        },
+        {
+          "date": "2001-11-26",
+          "fires_next14": 7,
+          "typical": 6
+        },
+        {
+          "date": "2025-12-10",
+          "fires_next14": 4,
+          "typical": 6
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.2,
+        "rain30_pct_of_normal": 102,
+        "rain180_pct_of_normal": 105,
+        "rh30_anom": -4.3,
+        "vpd30_anom": 0.1,
+        "soil_wetness_anom": 0.032,
+        "rootzone_wetness_anom": 0.08,
+        "wind14_anom": -1.1,
+        "fires_last14": 10,
+        "neighbors_fires14": 497,
+        "typical_next14": 9
+      }
+    },
+    "KAZ-3206": {
+      "prob": 0.178,
+      "usual_prob": 0.24,
+      "times_usual": 0.7,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.115
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2010-11-05",
+          "fires_next14": 31,
+          "typical": 17
+        },
+        {
+          "date": "2007-11-26",
+          "fires_next14": 8,
+          "typical": 6
+        },
+        {
+          "date": "2008-10-14",
+          "fires_next14": 73,
+          "typical": 108
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 1.1,
+        "rain30_pct_of_normal": 77,
+        "rain180_pct_of_normal": 66,
+        "rh30_anom": -5.8,
+        "vpd30_anom": 0.03,
+        "soil_wetness_anom": -0.056,
+        "rootzone_wetness_anom": -0.043,
+        "wind14_anom": -1.2,
+        "fires_last14": 57,
+        "neighbors_fires14": 239,
+        "typical_next14": 17
+      }
+    },
+    "KAZ-3207": {
+      "prob": 0.16,
+      "usual_prob": 0.28,
+      "times_usual": 0.6,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.094
+        },
+        {
+          "key": "lastyear",
+          "push": 0.032
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2015-12-10",
+          "fires_next14": 3,
+          "typical": 4
+        },
+        {
+          "date": "2024-12-02",
+          "fires_next14": 0,
+          "typical": 4
+        },
+        {
+          "date": "2023-12-10",
+          "fires_next14": 6,
+          "typical": 4
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 2.7,
+        "rain30_pct_of_normal": 94,
+        "rain180_pct_of_normal": 92,
+        "rh30_anom": -13.4,
+        "vpd30_anom": 0.25,
+        "soil_wetness_anom": 0.116,
+        "rootzone_wetness_anom": 0.21,
+        "wind14_anom": -0.4,
+        "fires_last14": 175,
+        "neighbors_fires14": 292,
+        "typical_next14": 22
+      }
+    },
+    "KAZ-3236": {
+      "prob": 0.03,
+      "usual_prob": 0.04,
+      "times_usual": 0.7,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2019-11-05",
+          "fires_next14": 6,
+          "typical": 2
+        },
+        {
+          "date": "2022-10-29",
+          "fires_next14": 0,
+          "typical": 2
+        },
+        {
+          "date": "2012-11-18",
+          "fires_next14": 1,
+          "typical": 1
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 2.8,
+        "rain30_pct_of_normal": 174,
+        "rain180_pct_of_normal": 189,
+        "rh30_anom": -17.0,
+        "vpd30_anom": 0.4,
+        "soil_wetness_anom": -0.051,
+        "rootzone_wetness_anom": -0.079,
+        "wind14_anom": -0.0,
+        "fires_last14": 1,
+        "neighbors_fires14": 243,
+        "typical_next14": 2
+      }
+    },
+    "KAZ-3251": {
+      "prob": 0.081,
+      "usual_prob": 0.28,
+      "times_usual": 0.3,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2012-11-04",
+          "fires_next14": 36,
+          "typical": 34
+        },
+        {
+          "date": "2013-12-10",
+          "fires_next14": 3,
+          "typical": 4
+        },
+        {
+          "date": "2017-11-26",
+          "fires_next14": 1,
+          "typical": 6
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.7,
+        "rain30_pct_of_normal": 66,
+        "rain180_pct_of_normal": 81,
+        "rh30_anom": -21.0,
+        "vpd30_anom": 0.69,
+        "soil_wetness_anom": -0.081,
+        "rootzone_wetness_anom": -0.052,
+        "wind14_anom": 0.3,
+        "fires_last14": 51,
+        "neighbors_fires14": 241,
+        "typical_next14": 25
+      }
+    },
+    "KAZ-3252": {
+      "prob": 0.181,
+      "usual_prob": 0.32,
+      "times_usual": 0.6,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.066
+        },
+        {
+          "key": "lastyear",
+          "push": 0.043
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2010-12-03",
+          "fires_next14": 2,
+          "typical": 2
+        },
+        {
+          "date": "2024-12-02",
+          "fires_next14": 1,
+          "typical": 2
+        },
+        {
+          "date": "2001-11-26",
+          "fires_next14": 5,
+          "typical": 2
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 2.3,
+        "rain30_pct_of_normal": 97,
+        "rain180_pct_of_normal": 97,
+        "rh30_anom": -17.6,
+        "vpd30_anom": 0.26,
+        "soil_wetness_anom": 0.049,
+        "rootzone_wetness_anom": 0.182,
+        "wind14_anom": -0.2,
+        "fires_last14": 74,
+        "neighbors_fires14": 394,
+        "typical_next14": 15
+      }
+    },
+    "KAZ-4829": {
+      "prob": 0.0,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2012-11-04",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2013-12-03",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2019-12-10",
+          "fires_next14": 0,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": -1.1,
+        "rain30_pct_of_normal": 87,
+        "rain180_pct_of_normal": 89,
+        "rh30_anom": -10.0,
+        "vpd30_anom": -0.06,
+        "soil_wetness_anom": -0.121,
+        "rootzone_wetness_anom": -0.077,
+        "wind14_anom": -0.1,
+        "fires_last14": 0,
+        "neighbors_fires14": 175,
+        "typical_next14": 0
+      }
+    },
+    "KAZ-4830": {
+      "prob": 0.006,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2019-10-15",
+          "fires_next14": 11,
+          "typical": 0
+        },
+        {
+          "date": "2006-11-19",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2007-10-22",
+          "fires_next14": 0,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.6,
+        "rain30_pct_of_normal": 76,
+        "rain180_pct_of_normal": 76,
+        "rh30_anom": -11.5,
+        "vpd30_anom": 0.22,
+        "soil_wetness_anom": -0.044,
+        "rootzone_wetness_anom": 0.005,
+        "wind14_anom": -1.6,
+        "fires_last14": 0,
+        "neighbors_fires14": 93,
+        "typical_next14": 0
+      }
+    },
+    "KGZ-1115": {
+      "prob": 0.004,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2013-12-03",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2013-11-26",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2022-10-22",
+          "fires_next14": 0,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": -0.3,
+        "rain30_pct_of_normal": 85,
+        "rain180_pct_of_normal": 75,
+        "rh30_anom": -10.6,
+        "vpd30_anom": 0.02,
+        "soil_wetness_anom": -0.206,
+        "rootzone_wetness_anom": -0.184,
+        "wind14_anom": 0.2,
+        "fires_last14": 1,
+        "neighbors_fires14": 108,
+        "typical_next14": 0
+      }
+    },
+    "KGZ-1116": {
+      "prob": 0.302,
+      "usual_prob": 0.24,
+      "times_usual": 1.3,
+      "level": "elevated",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.242
+        },
+        {
+          "key": "lastyear",
+          "push": 0.064
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2013-12-03",
+          "fires_next14": 5,
+          "typical": 1
+        },
+        {
+          "date": "2013-11-26",
+          "fires_next14": 0,
+          "typical": 1
+        },
+        {
+          "date": "2022-10-22",
+          "fires_next14": 0,
+          "typical": 14
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": -0.3,
+        "rain30_pct_of_normal": 85,
+        "rain180_pct_of_normal": 75,
+        "rh30_anom": -10.6,
+        "vpd30_anom": 0.02,
+        "soil_wetness_anom": -0.206,
+        "rootzone_wetness_anom": -0.184,
+        "wind14_anom": 0.2,
+        "fires_last14": 108,
+        "neighbors_fires14": 257,
+        "typical_next14": 3
+      }
+    },
+    "KGZ-1117": {
+      "prob": 0.011,
+      "usual_prob": 0.04,
+      "times_usual": 0.3,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2011-10-22",
+          "fires_next14": 4,
+          "typical": 6
+        },
+        {
+          "date": "2019-11-05",
+          "fires_next14": 0,
+          "typical": 2
+        },
+        {
+          "date": "2024-12-02",
+          "fires_next14": 0,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": -0.2,
+        "rain30_pct_of_normal": 83,
+        "rain180_pct_of_normal": 139,
+        "rh30_anom": -2.9,
+        "vpd30_anom": -0.01,
+        "soil_wetness_anom": 0.048,
+        "rootzone_wetness_anom": 0.047,
+        "wind14_anom": -1.2,
+        "fires_last14": 0,
+        "neighbors_fires14": 283,
+        "typical_next14": 1
+      }
+    },
+    "KGZ-1118": {
+      "prob": 0.021,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2017-11-26",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2001-11-26",
+          "fires_next14": 1,
+          "typical": 0
+        },
+        {
+          "date": "2011-10-22",
+          "fires_next14": 2,
+          "typical": 2
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 1.7,
+        "rain30_pct_of_normal": 44,
+        "rain180_pct_of_normal": 48,
+        "rh30_anom": -6.2,
+        "vpd30_anom": 0.07,
+        "soil_wetness_anom": 0.013,
+        "rootzone_wetness_anom": 0.039,
+        "wind14_anom": -0.9,
+        "fires_last14": 0,
+        "neighbors_fires14": 112,
+        "typical_next14": 1
+      }
+    },
+    "KGZ-1119": {
+      "prob": 0.003,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2019-11-05",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2023-11-12",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2019-11-26",
+          "fires_next14": 0,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 1.7,
+        "rain30_pct_of_normal": 134,
+        "rain180_pct_of_normal": 597,
+        "rh30_anom": -0.3,
+        "vpd30_anom": 0.04,
+        "soil_wetness_anom": 0.064,
+        "rootzone_wetness_anom": 0.017,
+        "wind14_anom": -1.0,
+        "fires_last14": 0,
+        "neighbors_fires14": 6,
+        "typical_next14": 0
+      }
+    },
+    "KGZ-1120": {
+      "prob": 0.064,
+      "usual_prob": 0.04,
+      "times_usual": 1.6,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "lastyear",
+          "push": 0.032
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2022-10-22",
+          "fires_next14": 1,
+          "typical": 5
+        },
+        {
+          "date": "2004-10-21",
+          "fires_next14": 9,
+          "typical": 5
+        },
+        {
+          "date": "2003-11-05",
+          "fires_next14": 2,
+          "typical": 2
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 2.8,
+        "rain30_pct_of_normal": 101,
+        "rain180_pct_of_normal": 175,
+        "rh30_anom": -11.0,
+        "vpd30_anom": 0.18,
+        "soil_wetness_anom": -0.022,
+        "rootzone_wetness_anom": 0.01,
+        "wind14_anom": -0.9,
+        "fires_last14": 2,
+        "neighbors_fires14": 143,
+        "typical_next14": 2
+      }
+    },
+    "KGZ-1121": {
+      "prob": 0.013,
+      "usual_prob": 0.04,
+      "times_usual": 0.3,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2019-11-05",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2025-12-10",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2013-11-26",
+          "fires_next14": 0,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 1.5,
+        "rain30_pct_of_normal": 74,
+        "rain180_pct_of_normal": 101,
+        "rh30_anom": -7.8,
+        "vpd30_anom": 0.1,
+        "soil_wetness_anom": -0.107,
+        "rootzone_wetness_anom": -0.072,
+        "wind14_anom": -0.6,
+        "fires_last14": 6,
+        "neighbors_fires14": 245,
+        "typical_next14": 0
+      }
+    },
+    "KGZ-1122": {
+      "prob": 0.066,
+      "usual_prob": 0.16,
+      "times_usual": 0.4,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "lastyear",
+          "push": 0.028
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2003-11-05",
+          "fires_next14": 2,
+          "typical": 7
+        },
+        {
+          "date": "2022-10-22",
+          "fires_next14": 0,
+          "typical": 10
+        },
+        {
+          "date": "2003-11-12",
+          "fires_next14": 2,
+          "typical": 2
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 1.5,
+        "rain30_pct_of_normal": 169,
+        "rain180_pct_of_normal": 296,
+        "rh30_anom": 0.4,
+        "vpd30_anom": 0.03,
+        "soil_wetness_anom": 0.042,
+        "rootzone_wetness_anom": 0.002,
+        "wind14_anom": -0.1,
+        "fires_last14": 2,
+        "neighbors_fires14": 15,
+        "typical_next14": 2
+      }
+    },
+    "TJK-366": {
+      "prob": 0.002,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2022-10-22",
+          "fires_next14": 0,
+          "typical": 1
+        },
+        {
+          "date": "2024-12-02",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2014-10-22",
+          "fires_next14": 0,
+          "typical": 1
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": -0.1,
+        "rain30_pct_of_normal": 346,
+        "rain180_pct_of_normal": 406,
+        "rh30_anom": 12.2,
+        "vpd30_anom": -0.05,
+        "soil_wetness_anom": 0.176,
+        "rootzone_wetness_anom": -0.001,
+        "wind14_anom": -1.7,
+        "fires_last14": 0,
+        "neighbors_fires14": 4,
+        "typical_next14": 0
+      }
+    },
+    "TJK-367": {
+      "prob": 0.102,
+      "usual_prob": 0.16,
+      "times_usual": 0.6,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "dry",
+          "push": 0.024
+        },
+        {
+          "key": "lastyear",
+          "push": 0.022
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2022-10-22",
+          "fires_next14": 1,
+          "typical": 9
+        },
+        {
+          "date": "2019-11-05",
+          "fires_next14": 0,
+          "typical": 2
+        },
+        {
+          "date": "2003-11-19",
+          "fires_next14": 5,
+          "typical": 2
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 2.4,
+        "rain30_pct_of_normal": 178,
+        "rain180_pct_of_normal": 328,
+        "rh30_anom": -7.9,
+        "vpd30_anom": 0.29,
+        "soil_wetness_anom": -0.027,
+        "rootzone_wetness_anom": -0.13,
+        "wind14_anom": -0.2,
+        "fires_last14": 2,
+        "neighbors_fires14": 0,
+        "typical_next14": 2
+      }
+    },
+    "TJK-368": {
+      "prob": 0.026,
+      "usual_prob": 0.12,
+      "times_usual": 0.2,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2019-11-05",
+          "fires_next14": 1,
+          "typical": 2
+        },
+        {
+          "date": "2022-10-29",
+          "fires_next14": 0,
+          "typical": 4
+        },
+        {
+          "date": "2022-10-22",
+          "fires_next14": 0,
+          "typical": 4
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 0.4,
+        "rain30_pct_of_normal": 219,
+        "rain180_pct_of_normal": 295,
+        "rh30_anom": -2.4,
+        "vpd30_anom": -0.04,
+        "soil_wetness_anom": 0.07,
+        "rootzone_wetness_anom": -0.027,
+        "wind14_anom": -0.4,
+        "fires_last14": 0,
+        "neighbors_fires14": 8,
+        "typical_next14": 2
+      }
+    },
+    "TJK-369": {
+      "prob": 0.019,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2017-11-26",
+          "fires_next14": 0,
+          "typical": 1
+        },
+        {
+          "date": "2003-11-05",
+          "fires_next14": 1,
+          "typical": 1
+        },
+        {
+          "date": "2017-12-03",
+          "fires_next14": 0,
+          "typical": 1
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 5.1,
+        "rain30_pct_of_normal": 103,
+        "rain180_pct_of_normal": 123,
+        "rh30_anom": -19.0,
+        "vpd30_anom": 0.74,
+        "soil_wetness_anom": -0.154,
+        "rootzone_wetness_anom": -0.166,
+        "wind14_anom": 0.0,
+        "fires_last14": 4,
+        "neighbors_fires14": 51,
+        "typical_next14": 1
+      }
+    },
+    "TJK-5491": {
+      "prob": 0.0,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2019-11-05",
+          "fires_next14": 1,
+          "typical": 0
+        },
+        {
+          "date": "2022-10-29",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2022-10-22",
+          "fires_next14": 0,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 0.4,
+        "rain30_pct_of_normal": 219,
+        "rain180_pct_of_normal": 295,
+        "rh30_anom": -2.4,
+        "vpd30_anom": -0.04,
+        "soil_wetness_anom": 0.07,
+        "rootzone_wetness_anom": -0.027,
+        "wind14_anom": -0.4,
+        "fires_last14": 0,
+        "neighbors_fires14": 0,
+        "typical_next14": 0
+      }
+    },
+    "TKM-351": {
+      "prob": 0.111,
+      "usual_prob": 0.24,
+      "times_usual": 0.5,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2022-10-22",
+          "fires_next14": 11,
+          "typical": 22
+        },
+        {
+          "date": "2017-11-26",
+          "fires_next14": 6,
+          "typical": 15
+        },
+        {
+          "date": "2007-11-26",
+          "fires_next14": 10,
+          "typical": 15
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.0,
+        "rain30_pct_of_normal": 46,
+        "rain180_pct_of_normal": 105,
+        "rh30_anom": -18.5,
+        "vpd30_anom": 0.68,
+        "soil_wetness_anom": -0.071,
+        "rootzone_wetness_anom": -0.07,
+        "wind14_anom": -0.6,
+        "fires_last14": 19,
+        "neighbors_fires14": 72,
+        "typical_next14": 23
+      }
+    },
+    "TKM-352": {
+      "prob": 0.19,
+      "usual_prob": 0.08,
+      "times_usual": 2.4,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fuel",
+          "push": 0.057
+        },
+        {
+          "key": "fires",
+          "push": 0.055
+        },
+        {
+          "key": "wind",
+          "push": 0.021
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2012-10-14",
+          "fires_next14": 49,
+          "typical": 49
+        },
+        {
+          "date": "2009-11-26",
+          "fires_next14": 9,
+          "typical": 21
+        },
+        {
+          "date": "2020-11-11",
+          "fires_next14": 11,
+          "typical": 24
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 2.0,
+        "rain30_pct_of_normal": 50,
+        "rain180_pct_of_normal": 328,
+        "rh30_anom": -14.7,
+        "vpd30_anom": 0.37,
+        "soil_wetness_anom": -0.12,
+        "rootzone_wetness_anom": -0.119,
+        "wind14_anom": -0.2,
+        "fires_last14": 42,
+        "neighbors_fires14": 109,
+        "typical_next14": 24
+      }
+    },
+    "TKM-353": {
+      "prob": 0.143,
+      "usual_prob": 0.24,
+      "times_usual": 0.6,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fuel",
+          "push": 0.042
+        },
+        {
+          "key": "fires",
+          "push": 0.037
+        },
+        {
+          "key": "wind",
+          "push": 0.021
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2004-10-21",
+          "fires_next14": 31,
+          "typical": 14
+        },
+        {
+          "date": "2004-11-11",
+          "fires_next14": 17,
+          "typical": 5
+        },
+        {
+          "date": "2025-11-12",
+          "fires_next14": 28,
+          "typical": 5
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.1,
+        "rain30_pct_of_normal": 49,
+        "rain180_pct_of_normal": 179,
+        "rh30_anom": -21.6,
+        "vpd30_anom": 0.5,
+        "soil_wetness_anom": -0.186,
+        "rootzone_wetness_anom": -0.289,
+        "wind14_anom": -0.2,
+        "fires_last14": 17,
+        "neighbors_fires14": 150,
+        "typical_next14": 5
+      }
+    },
+    "TKM-359": {
+      "prob": 0.195,
+      "usual_prob": 0.24,
+      "times_usual": 0.8,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.105
+        },
+        {
+          "key": "lastyear",
+          "push": 0.028
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2004-11-25",
+          "fires_next14": 23,
+          "typical": 20
+        },
+        {
+          "date": "2006-11-19",
+          "fires_next14": 10,
+          "typical": 21
+        },
+        {
+          "date": "2012-10-14",
+          "fires_next14": 17,
+          "typical": 37
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.5,
+        "rain30_pct_of_normal": 113,
+        "rain180_pct_of_normal": 127,
+        "rh30_anom": -11.8,
+        "vpd30_anom": 0.56,
+        "soil_wetness_anom": -0.013,
+        "rootzone_wetness_anom": 0.033,
+        "wind14_anom": 0.2,
+        "fires_last14": 46,
+        "neighbors_fires14": 150,
+        "typical_next14": 18
+      }
+    },
+    "TKM-360": {
+      "prob": 0.1,
+      "usual_prob": 0.08,
+      "times_usual": 1.2,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2003-11-05",
+          "fires_next14": 37,
+          "typical": 41
+        },
+        {
+          "date": "2007-12-03",
+          "fires_next14": 17,
+          "typical": 21
+        },
+        {
+          "date": "2017-11-26",
+          "fires_next14": 11,
+          "typical": 24
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.6,
+        "rain30_pct_of_normal": 62,
+        "rain180_pct_of_normal": 125,
+        "rh30_anom": -16.3,
+        "vpd30_anom": 0.65,
+        "soil_wetness_anom": -0.111,
+        "rootzone_wetness_anom": -0.1,
+        "wind14_anom": 0.4,
+        "fires_last14": 27,
+        "neighbors_fires14": 89,
+        "typical_next14": 31
+      }
+    },
+    "UZB-354": {
+      "prob": 0.08,
+      "usual_prob": 0.2,
+      "times_usual": 0.4,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2017-11-26",
+          "fires_next14": 20,
+          "typical": 8
+        },
+        {
+          "date": "2005-11-12",
+          "fires_next14": 16,
+          "typical": 9
+        },
+        {
+          "date": "2004-11-25",
+          "fires_next14": 4,
+          "typical": 8
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.0,
+        "rain30_pct_of_normal": 123,
+        "rain180_pct_of_normal": 144,
+        "rh30_anom": -16.2,
+        "vpd30_anom": 0.6,
+        "soil_wetness_anom": -0.147,
+        "rootzone_wetness_anom": -0.252,
+        "wind14_anom": -0.3,
+        "fires_last14": 10,
+        "neighbors_fires14": 101,
+        "typical_next14": 9
+      }
+    },
+    "UZB-355": {
+      "prob": 0.255,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "elevated",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.25
+        },
+        {
+          "key": "lastyear",
+          "push": 0.195
+        },
+        {
+          "key": "heat",
+          "push": 0.048
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2004-10-14",
+          "fires_next14": 2,
+          "typical": 2
+        },
+        {
+          "date": "2002-10-29",
+          "fires_next14": 2,
+          "typical": 1
+        },
+        {
+          "date": "2004-10-21",
+          "fires_next14": 1,
+          "typical": 1
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.1,
+        "rain30_pct_of_normal": 55,
+        "rain180_pct_of_normal": 111,
+        "rh30_anom": -20.3,
+        "vpd30_anom": 0.49,
+        "soil_wetness_anom": -0.102,
+        "rootzone_wetness_anom": -0.164,
+        "wind14_anom": -0.2,
+        "fires_last14": 31,
+        "neighbors_fires14": 85,
+        "typical_next14": 1
+      }
+    },
+    "UZB-356": {
+      "prob": 0.071,
+      "usual_prob": 0.16,
+      "times_usual": 0.4,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2004-11-11",
+          "fires_next14": 25,
+          "typical": 15
+        },
+        {
+          "date": "2019-11-19",
+          "fires_next14": 4,
+          "typical": 11
+        },
+        {
+          "date": "2025-11-12",
+          "fires_next14": 31,
+          "typical": 15
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.2,
+        "rain30_pct_of_normal": 98,
+        "rain180_pct_of_normal": 180,
+        "rh30_anom": -21.3,
+        "vpd30_anom": 0.48,
+        "soil_wetness_anom": -0.082,
+        "rootzone_wetness_anom": -0.124,
+        "wind14_anom": -0.5,
+        "fires_last14": 13,
+        "neighbors_fires14": 401,
+        "typical_next14": 15
+      }
+    },
+    "UZB-357": {
+      "prob": 0.03,
+      "usual_prob": 0.08,
+      "times_usual": 0.4,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2005-11-12",
+          "fires_next14": 4,
+          "typical": 4
+        },
+        {
+          "date": "2012-11-04",
+          "fires_next14": 2,
+          "typical": 4
+        },
+        {
+          "date": "2006-10-22",
+          "fires_next14": 6,
+          "typical": 5
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.6,
+        "rain30_pct_of_normal": 101,
+        "rain180_pct_of_normal": 115,
+        "rh30_anom": -14.0,
+        "vpd30_anom": 0.5,
+        "soil_wetness_anom": -0.078,
+        "rootzone_wetness_anom": -0.057,
+        "wind14_anom": -0.5,
+        "fires_last14": 0,
+        "neighbors_fires14": 171,
+        "typical_next14": 4
+      }
+    },
+    "UZB-358": {
+      "prob": 0.028,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2017-11-26",
+          "fires_next14": 0,
+          "typical": 1
+        },
+        {
+          "date": "2003-11-05",
+          "fires_next14": 8,
+          "typical": 1
+        },
+        {
+          "date": "2007-12-03",
+          "fires_next14": 0,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.2,
+        "rain30_pct_of_normal": 71,
+        "rain180_pct_of_normal": 193,
+        "rh30_anom": -17.1,
+        "vpd30_anom": 0.55,
+        "soil_wetness_anom": -0.156,
+        "rootzone_wetness_anom": -0.157,
+        "wind14_anom": -0.4,
+        "fires_last14": 0,
+        "neighbors_fires14": 40,
+        "typical_next14": 1
+      }
+    },
+    "UZB-361": {
+      "prob": 0.068,
+      "usual_prob": 0.2,
+      "times_usual": 0.3,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2003-11-05",
+          "fires_next14": 5,
+          "typical": 22
+        },
+        {
+          "date": "2007-12-10",
+          "fires_next14": 4,
+          "typical": 7
+        },
+        {
+          "date": "2004-11-25",
+          "fires_next14": 5,
+          "typical": 11
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 3.1,
+        "rain30_pct_of_normal": 108,
+        "rain180_pct_of_normal": 155,
+        "rh30_anom": -13.5,
+        "vpd30_anom": 0.51,
+        "soil_wetness_anom": -0.086,
+        "rootzone_wetness_anom": -0.134,
+        "wind14_anom": 0.6,
+        "fires_last14": 11,
+        "neighbors_fires14": 60,
+        "typical_next14": 13
+      }
+    },
+    "UZB-362": {
+      "prob": 0.039,
+      "usual_prob": 0.12,
+      "times_usual": 0.3,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2012-11-04",
+          "fires_next14": 2,
+          "typical": 2
+        },
+        {
+          "date": "2012-10-14",
+          "fires_next14": 0,
+          "typical": 2
+        },
+        {
+          "date": "2022-10-22",
+          "fires_next14": 14,
+          "typical": 2
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 0.9,
+        "rain30_pct_of_normal": 92,
+        "rain180_pct_of_normal": 247,
+        "rh30_anom": -6.9,
+        "vpd30_anom": 0.08,
+        "soil_wetness_anom": -0.056,
+        "rootzone_wetness_anom": -0.19,
+        "wind14_anom": 0.1,
+        "fires_last14": 0,
+        "neighbors_fires14": 63,
+        "typical_next14": 2
+      }
+    },
+    "UZB-363": {
+      "prob": 0.537,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "high",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.521
+        },
+        {
+          "key": "lastyear",
+          "push": 0.374
+        },
+        {
+          "key": "fuel",
+          "push": 0.299
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2022-10-22",
+          "fires_next14": 1,
+          "typical": 2
+        },
+        {
+          "date": "2023-11-12",
+          "fires_next14": 3,
+          "typical": 1
+        },
+        {
+          "date": "2003-11-05",
+          "fires_next14": 1,
+          "typical": 1
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 1.7,
+        "rain30_pct_of_normal": 146,
+        "rain180_pct_of_normal": 342,
+        "rh30_anom": -3.2,
+        "vpd30_anom": 0.1,
+        "soil_wetness_anom": -0.031,
+        "rootzone_wetness_anom": -0.066,
+        "wind14_anom": -0.2,
+        "fires_last14": 13,
+        "neighbors_fires14": 7,
+        "typical_next14": 1
+      }
+    },
+    "UZB-364": {
+      "prob": 0.053,
+      "usual_prob": 0.04,
+      "times_usual": 1.3,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "lastyear",
+          "push": 0.024
+        },
+        {
+          "key": "fuel",
+          "push": 0.021
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2010-11-05",
+          "fires_next14": 35,
+          "typical": 2
+        },
+        {
+          "date": "2019-11-26",
+          "fires_next14": 0,
+          "typical": 1
+        },
+        {
+          "date": "2017-12-03",
+          "fires_next14": 6,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 2.1,
+        "rain30_pct_of_normal": 117,
+        "rain180_pct_of_normal": 258,
+        "rh30_anom": -7.8,
+        "vpd30_anom": 0.24,
+        "soil_wetness_anom": -0.135,
+        "rootzone_wetness_anom": -0.223,
+        "wind14_anom": -0.8,
+        "fires_last14": 0,
+        "neighbors_fires14": 22,
+        "typical_next14": 2
+      }
+    },
+    "UZB-365": {
+      "prob": 0.017,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2017-12-03",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2023-12-10",
+          "fires_next14": 1,
+          "typical": 0
+        },
+        {
+          "date": "2017-12-10",
+          "fires_next14": 1,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 2.2,
+        "rain30_pct_of_normal": 60,
+        "rain180_pct_of_normal": 132,
+        "rh30_anom": -9.8,
+        "vpd30_anom": 0.31,
+        "soil_wetness_anom": -0.171,
+        "rootzone_wetness_anom": -0.203,
+        "wind14_anom": -0.3,
+        "fires_last14": 3,
+        "neighbors_fires14": 30,
+        "typical_next14": 1
+      }
+    },
+    "UZB-370": {
+      "prob": 0.142,
+      "usual_prob": 0.32,
+      "times_usual": 0.4,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "lastyear",
+          "push": 0.048
+        },
+        {
+          "key": "fires",
+          "push": 0.043
+        },
+        {
+          "key": "fuel",
+          "push": 0.028
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2017-11-26",
+          "fires_next14": 0,
+          "typical": 2
+        },
+        {
+          "date": "2002-11-19",
+          "fires_next14": 24,
+          "typical": 2
+        },
+        {
+          "date": "2025-12-10",
+          "fires_next14": 0,
+          "typical": 2
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.2,
+        "rain30_pct_of_normal": 61,
+        "rain180_pct_of_normal": 108,
+        "rh30_anom": -18.8,
+        "vpd30_anom": 0.62,
+        "soil_wetness_anom": -0.205,
+        "rootzone_wetness_anom": -0.222,
+        "wind14_anom": 0.1,
+        "fires_last14": 15,
+        "neighbors_fires14": 66,
+        "typical_next14": 3
+      }
+    },
+    "UZB-371": {
+      "prob": 0.1,
+      "usual_prob": 0.24,
+      "times_usual": 0.4,
+      "level": "low",
+      "drivers": [
+        {
+          "key": "fires",
+          "push": 0.038
+        },
+        {
+          "key": "lastyear",
+          "push": 0.029
+        }
+      ],
+      "analogs": [
+        {
+          "date": "2017-11-26",
+          "fires_next14": 1,
+          "typical": 2
+        },
+        {
+          "date": "2025-11-05",
+          "fires_next14": 27,
+          "typical": 4
+        },
+        {
+          "date": "2003-11-05",
+          "fires_next14": 2,
+          "typical": 4
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.7,
+        "rain30_pct_of_normal": 78,
+        "rain180_pct_of_normal": 111,
+        "rh30_anom": -20.3,
+        "vpd30_anom": 0.74,
+        "soil_wetness_anom": -0.209,
+        "rootzone_wetness_anom": -0.208,
+        "wind14_anom": 0.2,
+        "fires_last14": 11,
+        "neighbors_fires14": 81,
+        "typical_next14": 3
+      }
+    },
+    "UZB-372": {
+      "prob": 0.059,
+      "usual_prob": 0.24,
+      "times_usual": 0.2,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2017-11-26",
+          "fires_next14": 0,
+          "typical": 2
+        },
+        {
+          "date": "2025-12-10",
+          "fires_next14": 0,
+          "typical": 2
+        },
+        {
+          "date": "2009-11-26",
+          "fires_next14": 2,
+          "typical": 2
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.0,
+        "rain30_pct_of_normal": 90,
+        "rain180_pct_of_normal": 105,
+        "rh30_anom": -16.5,
+        "vpd30_anom": 0.57,
+        "soil_wetness_anom": -0.211,
+        "rootzone_wetness_anom": -0.233,
+        "wind14_anom": 0.7,
+        "fires_last14": 11,
+        "neighbors_fires14": 76,
+        "typical_next14": 8
+      }
+    },
+    "UZB-4828": {
+      "prob": 0.0,
+      "usual_prob": 0.0,
+      "times_usual": null,
+      "level": "low",
+      "drivers": [],
+      "analogs": [
+        {
+          "date": "2017-11-26",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2025-12-10",
+          "fires_next14": 0,
+          "typical": 0
+        },
+        {
+          "date": "2017-12-03",
+          "fires_next14": 0,
+          "typical": 0
+        }
+      ],
+      "now": {
+        "tmax30_anom_c": 4.3,
+        "rain30_pct_of_normal": 115,
+        "rain180_pct_of_normal": 116,
+        "rh30_anom": -17.6,
+        "vpd30_anom": 0.58,
+        "soil_wetness_anom": -0.209,
+        "rootzone_wetness_anom": -0.238,
+        "wind14_anom": 0.5,
+        "fires_last14": 0,
+        "neighbors_fires14": 62,
+        "typical_next14": 0
+      }
+    }
+  },
+  "levels": {
+    "low": "< 20%",
+    "elevated": "20-40%",
+    "high": "40-60%",
+    "very_high": ">= 60%"
+  }
+}

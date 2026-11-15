@@ -1,0 +1,9 @@
+# runtime (what the web server needs; used by Vercel)
+fastapi>=0.115
+duckdb>=1.1
+pandas>=2.2
+numpy>=2.0
+shapely>=2.0
+anthropic>=2.8
+vercel>=0.13
+pywebpush>=2.0

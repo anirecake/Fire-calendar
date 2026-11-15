@@ -1,0 +1,26 @@
+{
+ "id": "ca",
+ "bbox": [
+  46.0,
+  35.0,
+  88.0,
+  56.0
+ ],
+ "sites": {
+  "ca": "https://fire-calendar.vercel.app",
+  "us": "https://fire-calendar-usa.vercel.app"
+ },
+ "emergency_number": "112",
+ "name": {
+  "en": "Central Asia",
+  "ru": "Центральная Азия",
+  "kk": "Орталық Азия"
+ },
+ "alerts": true,
+ "view": null,
+ "places": null,
+ "i18n": {},
+ "ai_region": "Central Asia (Kazakhstan, Kyrgyzstan, Tajikistan, Turkmenistan, Uzbekistan)",
+ "ai_people": "the Ministry of Emergency Situations department of one province and the local akimats",
+ "ai_causes": "Most fires here are human-caused (stubble, pasture and reed burning)."
+}
