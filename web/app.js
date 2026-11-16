@@ -244,7 +244,7 @@
     return s;
   }
   async function loadGeo() {
-    const [countries, regions] = await Promise.all([getJSON("/static/countries.geojson?v=40"), getJSON("/static/regions.geojson?v=40")]);
+    const [countries, regions] = await Promise.all([getJSON("/static/countries.geojson?v=43"), getJSON("/static/regions.geojson?v=43")]);
     regionsLayer = L.geoJSON(regions, {
       style: regionStyle,
       onEachFeature: (f, layer) => {
@@ -527,20 +527,25 @@
         if (seq !== S.seq) return;
         S.cal = cal; S.an = an; S.dataKey = key;
       }
+      /* answers are kept in local variables and stored only if this is still the newest request:
+         a slower older request must never put its fires or cells under a newer selection */
       if (S.view === "emergency") {
-        S.activeSince = new Date(new Date(`${S.meta.date_range[1]}T00:00:00Z`).getTime() - 6 * 864e5).toISOString().slice(0, 10);
-        S.active = await api("/api/events", { ...S.area, since: S.activeSince, limit: 300, sort: "area_km2" });
+        const since = new Date(new Date(`${S.meta.date_range[1]}T00:00:00Z`).getTime() - 6 * 864e5).toISOString().slice(0, 10);
         const ck = cellsKey();
-        if (!ck) S.cells = null;
-        else if (!S.cells || S.cells.key !== ck) {
-          const q = S.area.region ? `region=${encodeURIComponent(S.area.region)}` : `country=${encodeURIComponent(S.area.country)}`;
-          S.cells = await getJSON(`/api/risk/cells?${q}`).then((r) => ({ ...r, key: ck })).catch(() => null);
-        }
+        const cq = S.area.region ? `region=${encodeURIComponent(S.area.region)}` : `country=${encodeURIComponent(S.area.country)}`;
+        const needCells = ck && (!S.cells || S.cells.key !== ck);
+        const [active, cells] = await Promise.all([
+          api("/api/events", { ...S.area, since, limit: 300, sort: "area_km2" }),
+          needCells ? getJSON(`/api/risk/cells?${cq}`).then((r) => ({ ...r, key: ck })).catch(() => null) : null]);
+        if (seq !== S.seq) return;
+        S.activeSince = since; S.active = active;
+        if (!ck) S.cells = null; else if (needCells) S.cells = cells;
       }
       if (S.view === "analyst") {
         const q = { ...S.area, start: `${S.from}-01-01`, end: `${S.to}-12-31`, types: [...S.evTypes], min_area_km2: S.evMin };
         const [top, sample] = await Promise.all([api("/api/events", { ...q, sort: S.evSort, desc: true, limit: 500 }),
           api("/api/events", { ...q, sort: "random", limit: 500 })]);
+        if (seq !== S.seq) return;
         S.events = top;
         const seen = new Set(top.events.map((e) => e.id));
         S.evScatter = top.events.concat(sample.events.filter((e) => !seen.has(e.id)));
@@ -1396,9 +1401,8 @@
     const b = (S.domain && S.domain.view) || m.bounds;
     map.fitBounds([[b.south, b.west], [b.north, b.east]], isPhone() ? { paddingTopLeft: [8, 230], paddingBottomRight: [8, window.innerHeight * 0.48] }
       : { paddingTopLeft: [360, 80], paddingBottomRight: [510, 70] });
-    showGrid();
     setView(S.view, { reload: false });
-    if (!applyHash()) selectCountry("", { fit: false });
+    if (!applyHash()) selectCountry("", { fit: false });        // either way setArea() loads the grid of that area only
     document.dispatchEvent(new CustomEvent("fc:ready"));
     window.addEventListener("hashchange", () => {
       const h = location.hash.slice(1);

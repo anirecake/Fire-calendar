@@ -46,6 +46,9 @@ def main() -> None:
             print(f"points.parquet {f.stat().st_size / 1e6:.0f} MB -> {(proc / f.name).stat().st_size / 1e6:.0f} MB")
             continue
         shutil.copy2(f, proc / f.name)
+    import subprocess
+    import sys
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "build_region_stats.py"), str(DEST)], check=True)
     size = sum(f.stat().st_size for f in DEST.rglob("*") if f.is_file() and ".vercel" not in f.parts)
     print(f"staged {DEST} ({size / 1e6:.0f} MB)")
 

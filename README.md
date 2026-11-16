@@ -177,7 +177,7 @@ on 2012–2015 → 2016–2018 and checked on untouched 2019–2021: coverage 94
 Headline finding: harmonized 2001–2025 Central Asia shows a significant decline
 (≈ −60 %/decade, Mann-Kendall p < 0.0001); VIIRS alone (2013+) cannot show it (p ≈ 0.10).
 
-Tests: `python -m pytest tests` (64 tests: API, statistics, data invariants, events, risk model, AI assistant with a fake Claude client, Telegram bot logic, browser push alerts).
+Tests: `python -m pytest tests` (75 tests: API, statistics, data invariants, events, risk model, AI assistant with a fake Claude client, Telegram bot logic, browser push alerts).
 
 ## Run locally
 

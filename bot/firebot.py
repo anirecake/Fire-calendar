@@ -25,6 +25,7 @@ import io
 import json
 import math
 import os
+import re
 import sqlite3
 import ssl
 import sys
@@ -42,18 +43,14 @@ POLL_MINUTES = float(os.environ.get("FIREBOT_POLL_MINUTES", 30))
 DEFAULT_RADIUS = 30
 RADII = [10, 30, 50, 100]
 MAX_AGE_H = 24                             # detections older than this are never alerted
+SAME_FIRE_KM = 3.0                         # a detection this close to one already reported is the same fire growing
 SITE = os.environ.get("FIREBOT_SITE", "https://fire-calendar.vercel.app").rstrip("/")
 
 
 # --------------------------------------------------------------------------- config
-def env(name: str) -> str:
-    v = os.environ.get(name, "").strip()
-    f = ROOT / ".env"
-    if not v and f.exists():
-        for line in f.read_text(encoding="utf-8").splitlines():
-            if line.strip().startswith(f"{name}="):
-                v = line.split("=", 1)[1].strip().strip('"').strip("'")
-    return v
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from app.env import env  # noqa: E402  (same .env reader as the website)
 
 
 def ssl_ctx() -> ssl.SSLContext:
@@ -158,6 +155,19 @@ def fetch_fires(key: str, static: Static, days: int = 1) -> list[dict]:
             continue
         fires += parse_firms(text, src)
     return [f for f in fires if not static.is_static(f["lat"], f["lon"])]
+
+
+def _key_point(key: str) -> tuple[float, float] | None:
+    """Coordinates stored in a detection key ("VIIRS:48.512,82.190@202608151005")."""
+    m = re.match(r"^[^:]*:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)@", str(key))
+    return (float(m.group(1)), float(m.group(2))) if m else None
+
+
+def new_fires(new: list[dict], known_keys) -> list[dict]:
+    """Detections that start a fire the subscriber has not been told about. A fire that keeps burning gives new
+    pixels at every satellite pass; those lie next to pixels already reported and must not alert again."""
+    pts = [p for p in map(_key_point, known_keys) if p]
+    return [f for f in new if not any(haversine_km(f["lat"], f["lon"], a, b) <= SAME_FIRE_KM for a, b in pts)]
 
 
 def fires_near(fires: list[dict], lat: float, lon: float, radius_km: float, now: dt.datetime | None = None) -> list[dict]:
@@ -319,7 +329,6 @@ def web_push():
 
 
 def parse_coords(text: str) -> tuple[float, float] | None:
-    import re
     m = re.match(r"^\s*(-?\d{1,2}(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$", text)
     if not m:
         return None
@@ -357,7 +366,7 @@ class Store:
         old = self.get(chat_id)
         r = radius or (old["radius_km"] if old else DEFAULT_RADIUS)
         self.db.execute("INSERT OR REPLACE INTO subs VALUES (?, ?, ?, ?, ?, ?)",
-                        (chat_id, lat, lon, r, self.lang(chat_id), dt.datetime.utcnow().isoformat()))
+                        (chat_id, lat, lon, r, self.lang(chat_id), dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat()))
         self.db.commit()
         return self.get(chat_id)
 
@@ -377,8 +386,11 @@ class Store:
         self.db.execute("DELETE FROM subs WHERE chat_id=?", (chat_id,))
         self.db.commit()
 
+    def seen_keys(self, chat_id: int) -> set[str]:
+        return {r["fire_key"] for r in self.db.execute("SELECT fire_key FROM sent WHERE chat_id=?", (chat_id,))}
+
     def unseen(self, chat_id: int, fires: list[dict]) -> list[dict]:
-        seen = {r["fire_key"] for r in self.db.execute("SELECT fire_key FROM sent WHERE chat_id=?", (chat_id,))}
+        seen = self.seen_keys(chat_id)
         return [f for f in fires if f["key"] not in seen]
 
     def mark(self, chat_id: int, fires: list[dict]) -> None:
@@ -551,19 +563,28 @@ class Bot:
         fires = self.current_fires(max_age_s=60)
         sent = pushed = 0
         for sub in subs:
-            new = self.store.unseen(sub["chat_id"], fires_near(fires, sub["lat"], sub["lon"], sub["radius_km"]))
-            if new:
-                self.send(sub["chat_id"], format_alert(sub, new, self.static))
-                self.store.mark(sub["chat_id"], new)
+            cid = sub["chat_id"]
+            new = self.store.unseen(cid, fires_near(fires, sub["lat"], sub["lon"], sub["radius_km"]))
+            if not new:
+                continue
+            fresh = new_fires(new, self.store.seen_keys(cid))   # one alert per fire, not per satellite pass
+            if fresh:
+                self.send(cid, format_alert(sub, fresh, self.static))
                 sent += 1
+            self.store.mark(cid, new)                   # growth of a known fire is remembered silently
         for ws in web:
             key = f"web:{ws['id']}"
             created = dt.datetime.fromisoformat(ws["created"]) if ws.get("created") else None
-            near = [f for f in fires_near(fires, ws["lat"], ws["lon"], ws["radius_km"]) if not created or f["when"] > created]
-            new = self.store.unseen(key, near)          # only fires detected after subscribing, each once
+            around = fires_near(fires, ws["lat"], ws["lon"], ws["radius_km"])
+            before = [f["key"] for f in around if created and f["when"] <= created]   # burning before they subscribed
+            new = self.store.unseen(key, [f for f in around if not created or f["when"] > created])
             if not new:
                 continue
-            status = wp.send(ws["sub"], format_push(ws, new, self.static), ttl=6 * 3600)
+            fresh = new_fires(new, self.store.seen_keys(key) | set(before))
+            if not fresh:
+                self.store.mark(key, new)
+                continue
+            status = wp.send(ws["sub"], format_push(ws, fresh, self.static), ttl=6 * 3600)
             if status in (404, 410):                    # browser unsubscribed or data cleared
                 wp.store_delete(ws["id"])
                 continue

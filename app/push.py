@@ -32,16 +32,7 @@ PREFIX = "push/"
 router = APIRouter()
 
 
-def _env(name: str) -> str:
-    v = os.environ.get(name, "").strip()
-    for fname in (".env", ".env.local"):
-        f = ROOT / fname
-        if not v and f.exists():
-            for line in f.read_text(encoding="utf-8").splitlines():
-                if line.strip().startswith(f"{name}="):
-                    v = line.split("=", 1)[1].strip().strip('"').strip("'")
-    return v
-
+from app.env import env as _env  # noqa: E402
 
 VAPID_PUBLIC = _env("VAPID_PUBLIC_KEY")
 VAPID_PRIVATE = _env("VAPID_PRIVATE_KEY")

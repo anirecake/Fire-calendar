@@ -248,7 +248,7 @@ def test_ai_briefing_grounded(client, monkeypatch):
     monkeypatch.setattr(assistant, "_client", NS(beta=NS(messages=fake)))
     monkeypatch.setattr(briefing, "_blob_get", lambda key: None)
     monkeypatch.setattr(briefing, "_blob_put", lambda key, data: None)
-    briefing._cache.clear(); briefing._hits.clear()
+    briefing._cache.clear(); assistant._hits.clear()
     b = client.get("/api/ai/briefing", params={"region": "KAZ-3252", "lang": "ru"}).json()
     assert b["headline"] == "Low risk." and b["actions"][0]["who"] == "fire units"
     kw = fake.calls[0]
@@ -308,7 +308,7 @@ def test_ai_fire_report_grounded(client, monkeypatch):
     monkeypatch.setattr(assistant, "_client", NS(beta=NS(messages=fake)))
     monkeypatch.setattr(briefing, "_blob_get", lambda key: None)
     monkeypatch.setattr(briefing, "_blob_put", lambda key, data: None)
-    fires._cache.clear(); fires._hits.clear()
+    fires._cache.clear(); assistant._hits.clear()
     fid = fires.INDEX["fires"][0]["id"]
     a = client.get("/api/ai/fire-report", params={"id": fid, "lang": "kk"}).json()
     assert a["headline"].startswith("Steppe") and a["for_emergency"]["actions"][0]["who"] == "fire units"
@@ -319,3 +319,97 @@ def test_ai_fire_report_grounded(client, monkeypatch):
     client.get("/api/ai/fire-report", params={"id": fid, "lang": "kk"})
     assert len(fake.calls) == 1                                                                      # cached
     assert client.get("/api/ai/fire-report", params={"id": 1, "lang": "kk"}).status_code == 404
+
+
+# ---------------------------------------------------------------- review fixes
+def test_one_alert_per_fire_not_per_pixel():
+    """A fire that keeps burning gives new pixels at every satellite pass: they must not alert again."""
+    import firebot as fb
+    now = dt.datetime.now(dt.timezone.utc)
+    det = lambda lat, lon, m: {"lat": lat, "lon": lon, "when": now - dt.timedelta(minutes=m), "frp": 9.0, "source": "VIIRS_SNPP_NRT",
+                               "key": f"VIIRS:{lat:.3f},{lon:.3f}@{(now - dt.timedelta(minutes=m)):%Y%m%d%H%M}"}
+    first, grown, other = det(43.300, 77.000, 300), det(43.310, 77.012, 60), det(43.600, 77.400, 30)
+    assert fb._key_point(first["key"]) == (43.3, 77.0) and fb._key_point("demo") is None
+    assert fb.new_fires([first], set()) == [first]                               # nothing known yet: a new fire
+    assert fb.new_fires([grown], {first["key"]}) == []                           # 1.5 km from a reported pixel: same fire
+    assert fb.new_fires([grown, other], {first["key"]}) == [other]               # 45 km away: a different fire
+
+    sent = []
+    bot = fb.Bot.__new__(fb.Bot)
+    bot.store, bot.static = fb.Store(":memory:"), fb.Static()
+    bot.send = lambda chat_id, text, **kw: sent.append(chat_id)
+    bot.store.subscribe(7, 43.24, 76.95, 100)
+    for batch, expected in (([first], 1), ([first, grown], 1), ([first, grown, other], 2), ([first, grown, other], 2)):
+        bot.current_fires = lambda max_age_s=60, b=batch: b
+        fb.web_push = lambda: None
+        bot.check_alerts()
+        assert len(sent) == expected
+    bot.store.db.close()
+
+
+def test_cache_headers(client):
+    """Pages, assets and read-only data may be kept by the CDN; the service worker and health check may not."""
+    h = lambda url: client.get(url).headers.get("cache-control", "")
+    assert "s-maxage" in h("/") and "max-age=0" in h("/")
+    assert "immutable" in h("/static/app.js?v=1") and "immutable" not in h("/static/icon-192.png")
+    for url in ("/api/meta", "/api/regions", "/api/risk", "/api/grid?year=2020"):
+        assert "s-maxage=3600" in h(url)
+    assert h("/sw.js") == "no-cache" and "s-maxage" not in h("/api/health")
+    assert "s-maxage" not in client.get("/api/grid?year=1900").headers.get("cache-control", "")     # errors are not cached
+
+
+def test_csv_limit_checked_before_loading(client, main, monkeypatch):
+    calls = []
+    real = main.con.cursor
+    class Spy:
+        def __init__(self): self.c = real()
+        def execute(self, sql, params=None):
+            calls.append(sql); return self.c.execute(sql, params) if params is not None else self.c.execute(sql)
+    monkeypatch.setattr(main, "con", NS(cursor=Spy))
+    r = client.post("/api/hotspots.csv", json={"country": "Kazakhstan"})
+    assert r.status_code == 413 and "narrow" in r.json()["detail"]
+    assert len(calls) == 1 and calls[0].startswith("SELECT count(*)")            # rows were never loaded
+
+
+def test_region_stats_file_matches_live_computation(main):
+    saved = main.DATA / "region_stats.json"
+    if not saved.exists():
+        pytest.skip("region_stats.json not built")
+    j = json.loads(saved.read_text(encoding="utf-8"))
+    assert j["stamp"] == main._stats_stamp(), "run scripts/build_region_stats.py after rebuilding data"
+    assert j["regions"] == json.loads(json.dumps(main._compute_region_stats()))
+
+
+def test_ai_fire_report_follows_the_facts(client, monkeypatch):
+    """A rebuilt fact sheet must get a new AI text, not the one saved for the old facts."""
+    from app import assistant, briefing, fires
+    if not fires.INDEX["fires"]:
+        pytest.skip("fire reports not built")
+    fake, keys = FakeFire(), []
+    monkeypatch.setattr(assistant, "API_KEY", "test")
+    monkeypatch.setattr(assistant, "_client", NS(beta=NS(messages=fake)))
+    monkeypatch.setattr(briefing, "_blob_get", lambda key: None)
+    monkeypatch.setattr(briefing, "_blob_put", lambda key, data: keys.append(key))
+    fires._cache.clear(); assistant._hits.clear()
+    fid = fires.INDEX["fires"][0]["id"]
+    client.get("/api/ai/fire-report", params={"id": fid, "lang": "en"})
+    real = fires.detail
+    monkeypatch.setattr(fires, "detail", lambda i: {**real(i), "footprint_km2": 1.0})
+    client.get("/api/ai/fire-report", params={"id": fid, "lang": "en"})
+    assert len(fake.calls) == 2 and len(set(keys)) == 2
+
+
+def test_assistant_stops_before_function_limit(client, monkeypatch):
+    from app import assistant
+    class Slow:
+        calls = 0
+        def create(self, **kw):
+            Slow.calls += 1
+            assert kw["timeout"] <= assistant.CALL_TIMEOUT_S
+            return NS(stop_reason="tool_use", model="fake", content=[NS(type="tool_use", id=f"t{Slow.calls}", name="get_risk_forecast", input={})])
+    monkeypatch.setattr(assistant, "API_KEY", "test")
+    monkeypatch.setattr(assistant, "_client", NS(beta=NS(messages=Slow())))
+    monkeypatch.setattr(assistant, "BUDGET_S", 0.0)                              # as if the time were already used up
+    assistant._hits.clear()
+    r = client.post("/api/assistant", json={"messages": [{"role": "user", "content": "risk?"}], "lang": "en"}).json()
+    assert r["error"] == "timeout" and Slow.calls == 0

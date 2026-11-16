@@ -147,8 +147,11 @@ def resolve(area: Area) -> tuple[str | None, shapely.Geometry | None]:
 
 
 # --------------------------------------------------------------------------- queries
-def select_points(area: Area, cols: str, extra_where: str = "", params_extra=(), table: str = "pts"):
-    """Rows of `table` inside the area (bbox in SQL, exact polygon test in shapely)."""
+def select_points(area: Area, cols: str, extra_where: str = "", params_extra=(), table: str = "pts",
+                  max_rows: int | None = None):
+    """Rows of `table` inside the area (bbox in SQL, exact polygon test in shapely).
+    With max_rows the rows are counted in SQL first and HTTP 413 is raised instead of loading millions of rows
+    (a drawn shape is counted by its bounding box, so it gets 5x headroom before the exact test)."""
     _, geom = resolve(area)
     where, params = attr_where(area)
     if geom is not None:
@@ -156,9 +159,15 @@ def select_points(area: Area, cols: str, extra_where: str = "", params_extra=(),
         where.append("lon BETWEEN ? AND ? AND lat BETWEEN ? AND ?"); params += [w, e, s, n]
     if extra_where:
         where.append(extra_where); params += list(params_extra)
-    sql = f"SELECT {cols} FROM {table}" + (" WHERE " + " AND ".join(where) if where else "")
+    w_sql = " WHERE " + " AND ".join(where) if where else ""
+    exact = geom is None or geom.equals(shapely.box(*geom.bounds))
+    if max_rows is not None:
+        n_rows = con.cursor().execute(f"SELECT count(*) FROM {table}{w_sql}", params).fetchone()[0]
+        if n_rows > (max_rows if exact else 5 * max_rows):
+            raise HTTPException(413, f"{n_rows:,} hotspots match; narrow the area or dates to ≤ {max_rows:,}")
+    sql = f"SELECT {cols} FROM {table}{w_sql}"
     df = con.cursor().execute(sql, params).df()   # cursor = own connection per request (thread-safe)
-    if geom is not None and len(df) and not geom.equals(shapely.box(*geom.bounds)):
+    if geom is not None and len(df) and not exact:
         shapely.prepare(geom)
         df = df[shapely.contains_xy(geom, df.lon.to_numpy(), df.lat.to_numpy())]
     return df
@@ -519,7 +528,7 @@ def calendar_csv(area: Area):
 def hotspots_csv(area: Area):
     s, e = period(area)
     df = select_points(area, "lat, lon, date, time, sensor, satellite, conf, frp, daynight, country, w",
-                       "date BETWEEN ? AND ?", (s.date(), e.date()))
+                       "date BETWEEN ? AND ?", (s.date(), e.date()), max_rows=MAX_CSV_ROWS)
     if len(df) > MAX_CSV_ROWS:
         raise HTTPException(413, f"{len(df):,} hotspots match; narrow the area or dates to ≤ {MAX_CSV_ROWS:,}")
     df = df.rename(columns={"lat": "latitude", "lon": "longitude", "w": "harmonized_weight"}).sort_values("date")
@@ -580,10 +589,29 @@ def grid(year: int | None = None, month: int | None = None, region: str | None =
 
 
 # --------------------------------------------------------------------------- regions, events, risk
+def _stats_stamp() -> dict:
+    """What the saved region statistics must match to be used (data date, forecast date, number of fires)."""
+    return {"data_through": str(LAST_DATE.date()), "risk_issue": RISK["issue_date"] if RISK else None,
+            "events": EVENTS_META.get("events"), "regions": len(REGIONS)}
+
+
 @lru_cache(maxsize=1)
 def _region_stats() -> dict:
-    """Per-region headline numbers for the analyst / emergency views (computed once)."""
-    d = con.cursor().execute("SELECT region, year, month, day(date) AS day, sum(w) AS w FROM pts GROUP BY ALL").df()
+    """Per-region headline numbers for the analyst / emergency views. Read from region_stats.json (written by
+    scripts/build_region_stats.py) when it matches the current data; computed here otherwise."""
+    saved = DATA / "region_stats.json"
+    if saved.exists():
+        try:
+            j = json.loads(saved.read_text(encoding="utf-8"))
+            if j.get("stamp") == _stats_stamp():
+                return j["regions"]
+        except ValueError:
+            pass
+    return _compute_region_stats()
+
+
+def _compute_region_stats() -> dict:
+    d = con.cursor().execute("SELECT region, year, month, sum(w) AS w FROM pts GROUP BY ALL").df()
     fl = con.cursor().execute("SELECT region, year, month, sum(w) AS w FROM fill GROUP BY ALL").df()
     full = [y for y in YEARS if OK[y - FIRST_YEAR].all()]
     last_full = LAST_DATE if LAST_DATE.is_month_end else LAST_DATE - pd.offsets.MonthEnd(1)
@@ -745,6 +773,40 @@ def risk_cells(region: str | None = None, country: str | None = None):
             "cells": cells}
 
 
+CACHE_VERSIONED = "public, max-age=31536000, s-maxage=31536000, immutable"   # /static/x.js?v=NN
+CACHE_ASSET = "public, max-age=3600, s-maxage=86400"
+CACHE_DATA = "public, max-age=60, s-maxage=3600, stale-while-revalidate=86400"
+CACHE_AI = "public, max-age=300, s-maxage=86400"
+CACHE_PAGE = "public, max-age=0, s-maxage=600, stale-while-revalidate=86400, must-revalidate"
+_DATA_PATHS = ("/api/meta", "/api/regions", "/api/risk", "/api/grid", "/api/fires", "/api/links")
+
+
+def cache_policy(path: str, query: str) -> str | None:
+    """Cache-Control for a successful GET. Data, forecasts and pages only change with a new deployment (which
+    also clears the CDN cache), so they need not reach the Python function on every visit."""
+    if path == "/":
+        return CACHE_PAGE
+    if path.startswith("/static/"):
+        return CACHE_VERSIONED if "v=" in query else CACHE_ASSET
+    if path == "/manifest.webmanifest":
+        return CACHE_ASSET
+    if path.startswith("/api/ai/"):
+        return CACHE_AI
+    if path.startswith(_DATA_PATHS):
+        return CACHE_DATA
+    return None                                   # /sw.js, health, status, push config, docs: as the route says
+
+
+@app.middleware("http")
+async def cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    if request.method == "GET" and response.status_code == 200:
+        policy = cache_policy(request.url.path, request.url.query)
+        if policy:
+            response.headers["Cache-Control"] = policy
+    return response
+
+
 @app.exception_handler(Exception)
 async def unhandled(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "internal error", "type": type(exc).__name__})
@@ -776,18 +838,9 @@ def manifest():
     return FileResponse(WEB / "manifest.webmanifest", media_type="application/manifest+json")
 
 
-def _env(name: str) -> str | None:
-    import os
-    v = os.environ.get(name, "").strip()
-    env = ROOT / ".env"
-    if not v and env.exists():
-        for line in env.read_text(encoding="utf-8").splitlines():
-            if line.strip().startswith(f"{name}="):
-                v = line.split("=", 1)[1].strip().strip('"').strip("'")
-    return v or None
+from app.env import env as _env  # noqa: E402
 
-
-TELEGRAM_BOT = (_env("TELEGRAM_BOT_USERNAME") or "").lstrip("@") or None
+TELEGRAM_BOT = _env("TELEGRAM_BOT_USERNAME").lstrip("@") or None
 
 
 @app.get("/api/links", summary="Optional companion services (Telegram alert bot)")
@@ -800,4 +853,4 @@ app.mount("/static", StaticFiles(directory=WEB), name="static")
 
 @app.get("/", include_in_schema=False)
 def index():
-    return FileResponse(WEB / "index.html", headers={"Cache-Control": "no-cache"})
+    return FileResponse(WEB / "index.html")       # Cache-Control comes from cache_policy()

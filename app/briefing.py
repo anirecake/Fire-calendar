@@ -14,16 +14,12 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-import os
-import threading
-import time
+from functools import lru_cache
 
 from fastapi import APIRouter, HTTPException, Request
 
 router = APIRouter()
 _cache: dict[str, dict] = {}
-_lock = threading.Lock()
-_hits: dict[str, list[float]] = {}
 
 SCHEMA = {
     "type": "object",
@@ -76,17 +72,20 @@ def _part(lat: float, lon: float, bounds: tuple[float, float, float, float]) -> 
     return f"{ns}-{ew}".strip("-") or "centre"
 
 
+@lru_cache(maxsize=1)
+def _region_geoms() -> dict:
+    """Province shapes, parsed once per server instance."""
+    import shapely
+    feats = json.loads((_core().WEB / "regions.geojson").read_text(encoding="utf-8"))["features"]
+    return {f["properties"]["id"]: shapely.geometry.shape(f["geometry"]) for f in feats}
+
+
 def facts(rid: str) -> dict:
     core = _core()
     if rid not in core.REGIONS:
         raise HTTPException(400, f"unknown region '{rid}'")
-    import shapely
     reg = core.REGIONS[rid]
-    geom = None
-    for f in json.loads((core.WEB / "regions.geojson").read_text(encoding="utf-8"))["features"]:
-        if f["properties"]["id"] == rid:
-            geom = shapely.geometry.shape(f["geometry"])
-            break
+    geom = _region_geoms().get(rid)
     b = geom.bounds if geom is not None else (0, 0, 1, 1)
     risk = core.RISK["regions"].get(rid) if core.RISK else None
     out = {"province": {"id": rid, "name_en": reg["en"], "name_ru": reg["ru"], "name_kk": reg["kk"], "country": reg["country"],
@@ -159,48 +158,23 @@ def briefing(region: str, request: Request, lang: str = "en"):
     if lang not in LANG:
         raise HTTPException(400, "lang must be en, ru or kk")
     core = _core()
+    if region not in core.REGIONS:
+        raise HTTPException(400, f"unknown region '{region}'")
     issue = core.RISK["issue_date"] if core.RISK else "none"
     key = _blob_key(region, lang, issue)
     if key in _cache:
         return _cache[key]
-    f = facts(region)                                   # validates the region id
-    cached = _blob_get(key)
+    cached = _blob_get(key)                             # saved briefing first: the facts are only built on a miss
     if cached:
         _cache[key] = cached
         return cached
-    if not assistant.API_KEY:
-        raise HTTPException(503, "AI not configured")
-    ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(",")[0].strip()
-    now = time.time()
-    with _lock:
-        q = [t for t in _hits.get(ip, []) if t > now - 600]
-        if len(q) >= 12:
-            raise HTTPException(429, "too many requests")
-        _hits[ip] = q + [now]
-    import anthropic
-    try:
-        resp = assistant.client().beta.messages.create(
-            model=assistant.MODEL, max_tokens=4000,
-            system=SYSTEM_TMPL.format(people=core.DOMAIN.get("ai_people", "the regional emergency service"),
-                                      region=core.DOMAIN.get("ai_region", ""), num=core.DOMAIN.get("emergency_number", "112")),
-            messages=[{"role": "user", "content": f"Language: {LANG[lang]}.\nFacts (JSON):\n{json.dumps(f, ensure_ascii=False, default=str)}"}],
-            output_config={"effort": "medium", "format": {"type": "json_schema", "schema": SCHEMA}},
-            betas=["server-side-fallback-2026-07-01"], fallbacks="default",
-        )
-    except anthropic.RateLimitError:
-        raise HTTPException(429, "AI is busy, try again in a minute")
-    except (anthropic.APIConnectionError, anthropic.APITimeoutError):
-        raise HTTPException(503, "AI unreachable")
-    except anthropic.APIStatusError as e:
-        raise HTTPException(502, f"AI error {e.status_code}")
-    if resp.stop_reason == "refusal":
-        raise HTTPException(502, "AI declined")
-    text = next((b.text for b in resp.content if b.type == "text"), "")
-    try:
-        data = json.loads(text)
-    except ValueError:
-        raise HTTPException(502, "AI returned no briefing")
-    out = {"region": region, "lang": lang, "issue_date": issue, "model": resp.model, **data,
+    f = facts(region)
+    data, model = assistant.json_call(
+        request,
+        SYSTEM_TMPL.format(people=core.DOMAIN.get("ai_people", "the regional emergency service"),
+                           region=core.DOMAIN.get("ai_region", ""), num=core.DOMAIN.get("emergency_number", "112")),
+        f"Language: {LANG[lang]}.\nFacts (JSON):\n{json.dumps(f, ensure_ascii=False, default=str)}", SCHEMA, "briefing")
+    out = {"region": region, "lang": lang, "issue_date": issue, "model": model, **data,
            "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}
     _cache[key] = out
     _blob_put(key, out)

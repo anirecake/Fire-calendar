@@ -12,9 +12,8 @@ GET /api/ai/fire-report?id=&lang=   Claude turns the fact sheet into two texts: 
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
-import threading
-import time
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -29,8 +28,7 @@ BY_ID = {f["id"]: f for f in INDEX["fires"]}
 FILES = {"before.png": "image/png", "after.png": "image/png", "delta.png": "image/png",
          "report-en.pdf": "application/pdf", "report-ru.pdf": "application/pdf", "report-kk.pdf": "application/pdf"}
 _cache: dict[str, dict] = {}
-_lock = threading.Lock()
-_hits: dict[str, list[float]] = {}
+PROMPT_VERSION = "1"               # bump when SYSTEM or SCHEMA change, so saved reports are rewritten
 
 
 def detail(fid: int) -> dict:
@@ -139,48 +137,23 @@ def fire_report(id: int, request: Request, lang: str = "en"):
     if lang not in LANG:
         raise HTTPException(400, "lang must be en, ru or kk")
     rep = detail(id)
-    key = f"ai/fire/{INDEX['built']}/{id}_{lang}.json"
+    import app.main as core
+    facts_json = json.dumps(ai_facts(rep), ensure_ascii=False, default=str, sort_keys=True)
+    # the saved text belongs to these exact facts: a rebuilt fact sheet gets a new report
+    stamp = hashlib.sha256(f"{PROMPT_VERSION}|{facts_json}".encode()).hexdigest()[:16]
+    key = f"ai/fire/{id}_{lang}_{stamp}.json"
     if key in _cache:
         return _cache[key]
     cached = briefing._blob_get(key)
     if cached:
         _cache[key] = cached
         return cached
-    if not assistant.API_KEY:
-        raise HTTPException(503, "AI not configured")
-    ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(",")[0].strip()
-    now = time.time()
-    with _lock:
-        q = [t for t in _hits.get(ip, []) if t > now - 600]
-        if len(q) >= 12:
-            raise HTTPException(429, "too many requests")
-        _hits[ip] = q + [now]
-    import anthropic
-    import app.main as core
-    try:
-        resp = assistant.client().beta.messages.create(
-            model=assistant.MODEL, max_tokens=4000,
-            system=SYSTEM.format(people=core.DOMAIN.get("ai_people", "the regional emergency service"),
-                                 region=core.DOMAIN.get("ai_region", ""), num=core.DOMAIN.get("emergency_number", "112")),
-            messages=[{"role": "user", "content": f"Language: {LANG[lang]}.\nFacts (JSON):\n"
-                                                  f"{json.dumps(ai_facts(rep), ensure_ascii=False, default=str)}"}],
-            output_config={"effort": "medium", "format": {"type": "json_schema", "schema": SCHEMA}},
-            betas=["server-side-fallback-2026-07-01"], fallbacks="default",
-        )
-    except anthropic.RateLimitError:
-        raise HTTPException(429, "AI is busy, try again in a minute")
-    except (anthropic.APIConnectionError, anthropic.APITimeoutError):
-        raise HTTPException(503, "AI unreachable")
-    except anthropic.APIStatusError as e:
-        raise HTTPException(502, f"AI error {e.status_code}")
-    if resp.stop_reason == "refusal":
-        raise HTTPException(502, "AI declined")
-    text = next((b.text for b in resp.content if b.type == "text"), "")
-    try:
-        data = json.loads(text)
-    except ValueError:
-        raise HTTPException(502, "AI returned no report")
-    out = {"id": id, "lang": lang, "model": resp.model, **data,
+    data, model = assistant.json_call(
+        request,
+        SYSTEM.format(people=core.DOMAIN.get("ai_people", "the regional emergency service"),
+                      region=core.DOMAIN.get("ai_region", ""), num=core.DOMAIN.get("emergency_number", "112")),
+        f"Language: {LANG[lang]}.\nFacts (JSON):\n{facts_json}", SCHEMA, "report")
+    out = {"id": id, "lang": lang, "model": model, **data,
            "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}
     _cache[key] = out
     briefing._blob_put(key, out)

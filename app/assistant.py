@@ -21,6 +21,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from app.env import env
+
 ROOT = Path(__file__).resolve().parents[1]
 MODEL = os.environ.get("ASSISTANT_MODEL", "claude-opus-5-5")
 MAX_TURNS = 6                      # tool-use rounds per question
@@ -32,25 +34,19 @@ RATE_GLOBAL = (400, 3600)          # 400 questions per hour per server instance 
 router = APIRouter()
 
 
-def _load_env_key() -> str:
-    key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    env = ROOT / ".env"
-    if not key and env.exists():               # local dev: same .env as the FIRMS key
-        for line in env.read_text(encoding="utf-8").splitlines():
-            if line.strip().startswith("ANTHROPIC_API_KEY="):
-                key = line.split("=", 1)[1].strip().strip('"').strip("'")
-    return key
-
-
-API_KEY = _load_env_key()
+API_KEY = env("ANTHROPIC_API_KEY")
 _client = None
+BUDGET_S = 50.0                    # whole request must end before the 60 s serverless limit
+CALL_TIMEOUT_S = 40.0
 
 
 def client():
+    """No SDK retries: a retry could double the wait and pass the 60 s function limit. Overload is handled by
+    the server-side model fallback; a failed call returns a clear error and the visitor asks again."""
     global _client
     if _client is None:
         import anthropic
-        _client = anthropic.Anthropic(api_key=API_KEY, timeout=40.0, max_retries=1)
+        _client = anthropic.Anthropic(api_key=API_KEY, timeout=CALL_TIMEOUT_S, max_retries=0)
     return _client
 
 
@@ -69,6 +65,39 @@ def _allow(key: str, limit: int, window: int) -> bool:
             return False
         q.append(now)
         return True
+
+
+def client_ip(request: Request) -> str:
+    return (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(",")[0].strip()
+
+
+def json_call(request: Request, system: str, content: str, schema: dict, what: str = "answer") -> tuple[dict, str]:
+    """One grounded Claude call that must return JSON matching `schema` (AI briefing, after-fire report).
+    Rate-limited per visitor and per server instance; errors mapped to HTTP codes. Returns (data, model)."""
+    if not API_KEY:
+        raise HTTPException(503, "AI not configured")
+    if not _allow(f"json:{client_ip(request)}", 12, 600) or not _allow("global", *RATE_GLOBAL):
+        raise HTTPException(429, "too many requests")
+    import anthropic
+    try:
+        resp = client().beta.messages.create(
+            model=MODEL, max_tokens=4000, system=system, messages=[{"role": "user", "content": content}],
+            output_config={"effort": "medium", "format": {"type": "json_schema", "schema": schema}},
+            betas=["server-side-fallback-2026-07-01"], fallbacks="default",
+        )
+    except anthropic.RateLimitError:
+        raise HTTPException(429, "AI is busy, try again in a minute")
+    except (anthropic.APIConnectionError, anthropic.APITimeoutError):
+        raise HTTPException(503, "AI unreachable")
+    except anthropic.APIStatusError as e:
+        raise HTTPException(502, f"AI error {e.status_code}")
+    if resp.stop_reason == "refusal":
+        raise HTTPException(502, "AI declined")
+    text = next((b.text for b in resp.content if b.type == "text"), "")
+    try:
+        return json.loads(text), resp.model
+    except ValueError:
+        raise HTTPException(502, f"AI returned no {what}")
 
 
 # --------------------------------------------------------------------------- tools
@@ -293,8 +322,7 @@ def _context_note(body: AskBody) -> str:
 def ask(body: AskBody, request: Request):
     if not API_KEY:
         raise HTTPException(503, "assistant not configured (no ANTHROPIC_API_KEY)")
-    ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(",")[0].strip()
-    if not _allow(f"ip:{ip}", *RATE_PER_IP) or not _allow("global", *RATE_GLOBAL):
+    if not _allow(f"ip:{client_ip(request)}", *RATE_PER_IP) or not _allow("global", *RATE_GLOBAL):
         raise HTTPException(429, "too many questions, try again in a few minutes")
     import anthropic
 
@@ -311,12 +339,17 @@ def ask(body: AskBody, request: Request):
     actions: list[dict] = []
     used: list[str] = []
     sys_blocks = [{"type": "text", "text": system_prompt(), "cache_control": {"type": "ephemeral"}}]
+    started = time.monotonic()
     try:
         for _ in range(MAX_TURNS):
+            left = BUDGET_S - (time.monotonic() - started)
+            if left < 6:                                        # not enough time for another model round
+                return {"reply": None, "error": "timeout", "actions": actions, "tools_used": used}
             resp = client().beta.messages.create(
                 model=MODEL, max_tokens=2048, system=sys_blocks, tools=TOOLS, messages=messages,
                 output_config={"effort": "low"},
                 betas=["server-side-fallback-2026-07-01"], fallbacks="default",
+                timeout=min(CALL_TIMEOUT_S, left - 2),
             )
             if resp.stop_reason == "refusal":
                 return {"reply": None, "refused": True, "actions": actions, "tools_used": used}
